@@ -2,7 +2,6 @@ package bot
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -11,9 +10,14 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
+type Logger interface {
+	Print(...interface{})
+}
+
 type TelegramBot struct {
 	bot      *tgbotapi.BotAPI
 	database database.Database
+	logger   Logger
 
 	admins []int64
 
@@ -25,7 +29,7 @@ func (tb *TelegramBot) ListenErrors() {
 	for {
 		select {
 		case err := <-tb.errChannel:
-			log.Print("Telegram bot:", err)
+			tb.logger.Print("Telegram bot:", err)
 		case <-tb.closeChannel:
 			return
 		}
@@ -123,7 +127,7 @@ func (tb *TelegramBot) SendNotify(text string) error {
 	return nil
 }
 
-func NewTelegramBot(token string, admins []int64) (*TelegramBot, error) {
+func NewTelegramBot(token string, admins []int64, logger Logger) (*TelegramBot, error) {
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		return nil, err
@@ -132,5 +136,6 @@ func NewTelegramBot(token string, admins []int64) (*TelegramBot, error) {
 	return &TelegramBot{
 		bot:    bot,
 		admins: admins,
+		logger: logger,
 	}, nil
 }

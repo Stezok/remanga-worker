@@ -2,7 +2,6 @@ package worker
 
 import (
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
@@ -11,8 +10,13 @@ import (
 	"github.com/tebeka/selenium/chrome"
 )
 
+type Logger interface {
+	Print(...interface{})
+}
+
 type Worker struct {
 	WorkerConfig
+	logger Logger
 
 	taskChannel  chan models.Task
 	closeChannel chan struct{}
@@ -23,7 +27,7 @@ func (w *Worker) ListenErrors() {
 	for {
 		select {
 		case err := <-w.errorChannel:
-			log.Print(err)
+			w.logger.Print(err)
 		case <-w.closeChannel:
 			return
 		}
@@ -130,8 +134,9 @@ func (w *Worker) Close() {
 	}
 }
 
-func NewWorker(config WorkerConfig) *Worker {
+func NewWorker(config WorkerConfig, logger Logger) *Worker {
 	return &Worker{
+		logger:       logger,
 		WorkerConfig: config,
 		taskChannel:  make(chan models.Task, 4*config.ProcessCount),
 		closeChannel: make(chan struct{}, config.ProcessCount),

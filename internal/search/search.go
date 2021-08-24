@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"sync"
@@ -22,9 +21,14 @@ type Worker interface {
 	Close()
 }
 
+type Logger interface {
+	Print(...interface{})
+}
+
 type SearchService struct {
-	db  *database.Database
-	bot *bot.TelegramBot
+	db     *database.Database
+	bot    *bot.TelegramBot
+	logger Logger
 
 	worker Worker
 
@@ -109,7 +113,7 @@ func (ss *SearchService) Search(keyword string) ([]Document, int, int, error) {
 					if err == nil {
 						*ptr = val
 					} else {
-						log.Print(err)
+						ss.logger.Print(err)
 					}
 				}(&result[len(result)-1].TitleEng, doc.Title)
 
@@ -119,7 +123,7 @@ func (ss *SearchService) Search(keyword string) ([]Document, int, int, error) {
 					if err == nil {
 						*ptr = val
 					} else {
-						log.Print(err)
+						ss.logger.Print(err)
 					}
 				}(&result[len(result)-1].TitleRus, doc.Title)
 			}
@@ -135,7 +139,7 @@ func (ss *SearchService) ListenErrors() {
 	for {
 		select {
 		case err := <-ss.errChannel:
-			log.Print(err)
+			ss.logger.Print(err)
 		case <-ss.closeChannel:
 			return
 		}
@@ -255,11 +259,12 @@ func (ss *SearchService) Close() {
 	return
 }
 
-func NewSearchService(db *database.Database, bot *bot.TelegramBot, worker Worker) *SearchService {
+func NewSearchService(db *database.Database, bot *bot.TelegramBot, worker Worker, logger Logger) *SearchService {
 	return &SearchService{
 		db:           db,
 		worker:       worker,
 		bot:          bot,
+		logger:       logger,
 		errChannel:   make(chan error, 10),
 		closeChannel: make(chan struct{}, 2),
 	}

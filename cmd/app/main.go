@@ -12,30 +12,35 @@ import (
 )
 
 func main() {
+	logFile, err := os.Create("output.log")
+	if err != nil {
+		log.Fatal(err)
+	}
+	logger := log.New(logFile, "WARNING: ", log.Ldate|log.Ltime|log.Lshortfile)
 
 	config := worker.WorkerConfig{
-		PathToSelenium: "./chromedriver.exe",
+		PathToSelenium: "./chromedriver",
 		// PathToSelenium: "C:/Drivers/chromedriver.exe",
-		SeleniumMode: "default",
+		SeleniumMode: "headless",
 		Port:         9515,
 		ProcessCount: 4,
-		PathToImage:  "C:/Users/Артем/Desktop/Arti Manga Downloader/parser/1.jpg",
-		// PathToImage: "C:/Users/Админ/Desktop/script/1.jpg",
-		Login:    "Leaderq",
-		Password: "12345QawDse",
+		// PathToImage:  "C:/Users/Артем/Desktop/Arti Manga Downloader/parser/1.jpg",
+		PathToImage: "/root/parser/remanga-worker/cmd/app/1.jpg",
+		Login:       "Leaderq",
+		Password:    "12345QawDse",
 	}
-	w := worker.NewWorker(config)
+	w := worker.NewWorker(config, logger)
 
 	bot, err := bot.NewTelegramBot("1811774567:AAFVSUivdtW-nJOCvsW3aZG-Fl3BqwzmW-s", []int64{
 		496823111,
 		768413750,
-	})
+	}, logger)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	database := database.NewDatabase("./db.json")
-	service := search.NewSearchService(database, bot, w)
+	service := search.NewSearchService(database, bot, w, logger)
 
 	shutdownChannel := make(chan os.Signal, 1)
 	signal.Notify(shutdownChannel, os.Interrupt)
