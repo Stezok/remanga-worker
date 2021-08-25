@@ -109,7 +109,7 @@ func Post(wd selenium.WebDriver, ruName, enName, krName, link string) error {
 		formData.append("categories", "6");
 		formData.append("genres", "2");
 		formData.append("genres", "38");
-		formData.append("publishers", "5050");
+		formData.append("publishers", "5096");
 		formData.append("status", "4");
 		formData.append("age_limit", "0");
 		formData.append("issue_year", "2021");
