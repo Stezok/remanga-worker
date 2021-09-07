@@ -15,5 +15,5 @@
 # vendor/
 
 *.BACKUP
-config.*
+config.yaml
 resources
