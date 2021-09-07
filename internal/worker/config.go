@@ -1,14 +1,19 @@
 package worker
 
+type SeleniumMode int
+
+const (
+	SELENIUM_DEFAULT SeleniumMode = iota
+	SELENIUM_HEADLESS
+)
+
 type WorkerConfig struct {
-	PathToSelenium string
-	SeleniumMode   string
-	Port           int
+	SeleniumMode   SeleniumMode
+	PathToSelenium string `yaml:"seleniumPath"`
+	Port           int    `yaml:"port"`
+	PathToImage    string `yaml:"pathToImage"`
+	ProcessCount   int    `yaml:"processCount"`
 
-	ProcessCount int
-	PathToImage  string
-
-	Login    string
-	Password string
+	Login    string `yaml:"login"`
+	Password string `yaml:"password"`
 }
-

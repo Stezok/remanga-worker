@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Stezok/remanga-worker/internal/database"
+	"github.com/Stezok/remanga-worker/internal/hash"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
@@ -20,6 +22,9 @@ type TelegramBot struct {
 	logger   Logger
 
 	admins []int64
+
+	callbacks map[string]func()
+	mu        sync.Mutex
 
 	closeChannel chan struct{}
 	errChannel   chan error
@@ -36,9 +41,9 @@ func (tb *TelegramBot) ListenErrors() {
 	}
 }
 
-func (tb *TelegramBot) HandleUpdate(update tgbotapi.Update) {
+func (tb *TelegramBot) HandleMessage(update tgbotapi.Update) bool {
 	if update.Message == nil || update.Message.Chat == nil {
-		return
+		return false
 	}
 
 	msgArr := strings.Split(update.Message.Text, " ")
@@ -63,7 +68,6 @@ func (tb *TelegramBot) HandleUpdate(update tgbotapi.Update) {
 			if err != nil {
 				tb.errChannel <- err
 			}
-			return
 		}
 
 		text := ``
@@ -84,6 +88,34 @@ func (tb *TelegramBot) HandleUpdate(update tgbotapi.Update) {
 			tb.errChannel <- err
 		}
 	})
+	return true
+}
+
+func (tb *TelegramBot) HandleCallback(update tgbotapi.Update) bool {
+	// log.Print("recive")
+	if update.CallbackQuery == nil || update.CallbackQuery.Data == "" {
+		return false
+	}
+
+	key := update.CallbackQuery.Data
+	tb.mu.Lock()
+	defer tb.mu.Unlock()
+	tb.callbacks[key]()
+	delete(tb.callbacks, key)
+
+	edit := tgbotapi.EditMessageReplyMarkupConfig{
+		BaseEdit: tgbotapi.BaseEdit{
+			ChatID:      update.CallbackQuery.Message.Chat.ID,
+			MessageID:   update.CallbackQuery.Message.MessageID,
+			ReplyMarkup: nil,
+		},
+	}
+	_, err := tb.bot.Send(edit)
+	if err != nil {
+		tb.errChannel <- err
+	}
+
+	return true
 }
 
 func (tb *TelegramBot) HandleRequests(updates tgbotapi.UpdatesChannel) {
@@ -92,7 +124,10 @@ func (tb *TelegramBot) HandleRequests(updates tgbotapi.UpdatesChannel) {
 		case <-tb.closeChannel:
 			return
 		case update := <-updates:
-			tb.HandleUpdate(update)
+			switch {
+			case tb.HandleCallback(update):
+			case tb.HandleMessage(update):
+			}
 		}
 	}
 }
@@ -115,7 +150,30 @@ func (tb *TelegramBot) Close() {
 	}
 }
 
-func (tb *TelegramBot) SendNotify(text string) error {
+func (tb *TelegramBot) SendMessageWithCallback(text, callbackText string, callback func()) error {
+	for _, admin := range tb.admins {
+		msg := tgbotapi.NewMessage(admin, text)
+
+		randString := hash.RandomString(32)
+		// log.Print("RANDOM ", randString)
+		tb.callbacks[randString] = callback
+
+		msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData(callbackText, randString),
+			),
+		)
+		msg.DisableWebPagePreview = true
+		_, err := tb.bot.Send(msg)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (tb *TelegramBot) SendMessage(text string) error {
 	for _, admin := range tb.admins {
 		msg := tgbotapi.NewMessage(admin, text)
 		msg.ParseMode = "Markdown"
@@ -134,8 +192,9 @@ func NewTelegramBot(token string, admins []int64, logger Logger) (*TelegramBot, 
 	}
 
 	return &TelegramBot{
-		bot:    bot,
-		admins: admins,
-		logger: logger,
+		bot:       bot,
+		admins:    admins,
+		logger:    logger,
+		callbacks: make(map[string]func()),
 	}, nil
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/Stezok/remanga-worker/internal/bot"
 	"github.com/Stezok/remanga-worker/internal/database"
 	"github.com/Stezok/remanga-worker/internal/models"
+	"github.com/Stezok/remanga-worker/internal/translate"
 )
 
 type Worker interface {
@@ -30,7 +31,8 @@ type SearchService struct {
 	bot    *bot.TelegramBot
 	logger Logger
 
-	worker Worker
+	translator *translate.Translator
+	worker     Worker
 
 	errChannel   chan error
 	closeChannel chan struct{}
@@ -109,7 +111,7 @@ func (ss *SearchService) Search(keyword string) ([]Document, int, int, error) {
 				ss.wg.Add(2)
 				go func(ptr *string, text string) {
 					defer ss.wg.Done()
-					val, err := Translate(text, KOREAN, ENGLISH)
+					val, err := ss.translator.Translate(text, translate.KOREAN, translate.ENGLISH)
 					if err == nil {
 						*ptr = val
 					} else {
@@ -119,7 +121,7 @@ func (ss *SearchService) Search(keyword string) ([]Document, int, int, error) {
 
 				go func(ptr *string, text string) {
 					defer ss.wg.Done()
-					val, err := Translate(text, KOREAN, RUSSIAN)
+					val, err := ss.translator.Translate(text, translate.KOREAN, translate.RUSSIAN)
 					if err == nil {
 						*ptr = val
 					} else {
@@ -181,7 +183,7 @@ func (ss *SearchService) Notify(doc Document) {
 		🇺🇸 *Название на английском:*
 		%s`,
 				doc.EAISBN, doc.GetTime(), doc.GetPostTime(), doc.Title, doc.TitleRus, doc.TitleEng)
-			err := ss.bot.SendNotify(text)
+			err := ss.bot.SendMessage(text)
 			if err != nil {
 				ss.errChannel <- err
 			}
@@ -259,9 +261,10 @@ func (ss *SearchService) Close() {
 	return
 }
 
-func NewSearchService(db *database.Database, bot *bot.TelegramBot, worker Worker, logger Logger) *SearchService {
+func NewSearchService(db *database.Database, bot *bot.TelegramBot, translator *translate.Translator, worker Worker, logger Logger) *SearchService {
 	return &SearchService{
 		db:           db,
+		translator:   translator,
 		worker:       worker,
 		bot:          bot,
 		logger:       logger,

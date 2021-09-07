@@ -8,6 +8,7 @@ import (
 	"github.com/Stezok/remanga-worker/internal/bot"
 	"github.com/Stezok/remanga-worker/internal/database"
 	"github.com/Stezok/remanga-worker/internal/search"
+	"github.com/Stezok/remanga-worker/internal/translate"
 	"github.com/Stezok/remanga-worker/internal/worker"
 )
 
@@ -21,7 +22,7 @@ func main() {
 	config := worker.WorkerConfig{
 		PathToSelenium: "./chromedriver",
 		// PathToSelenium: "C:/Drivers/chromedriver.exe",
-		SeleniumMode: "headless",
+		SeleniumMode: worker.SELENIUM_HEADLESS,
 		Port:         9515,
 		ProcessCount: 4,
 		// PathToImage:  "C:/Users/Артем/Desktop/Arti Manga Downloader/parser/1.jpg",
@@ -39,8 +40,10 @@ func main() {
 		log.Fatal(err)
 	}
 
+	translator := translate.NewTranslator("b1g6d3iaj8fvksk5lu69", "AQVNyVcSdLfJvhW8HMAz4WnX8ZQjS0yt1XaDN0a8")
+
 	database := database.NewDatabase("./db.json")
-	service := search.NewSearchService(database, bot, w, logger)
+	service := search.NewSearchService(database, bot, translator, w, logger)
 
 	shutdownChannel := make(chan os.Signal, 1)
 	signal.Notify(shutdownChannel, os.Interrupt)

@@ -18,7 +18,7 @@ type Worker struct {
 	WorkerConfig
 	logger Logger
 
-	taskChannel  chan models.Task
+	TaskChannel  chan models.Task
 	closeChannel chan struct{}
 	errorChannel chan error
 }
@@ -59,7 +59,7 @@ func (w *Worker) Work(wd selenium.WebDriver) {
 
 	for {
 		select {
-		case task := <-w.taskChannel:
+		case task := <-w.TaskChannel:
 			err := w.Do(task, wd)
 			if err != nil {
 				w.errorChannel <- err
@@ -91,7 +91,7 @@ func (w *Worker) Run() error {
 		"--no-sandbox",
 		"--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/604.4.7 (KHTML, like Gecko) Version/11.0.2 Safari/604.4.7",
 	}
-	if w.SeleniumMode == "headless" {
+	if w.SeleniumMode == SELENIUM_HEADLESS {
 		args = append(args, "--headless")
 	}
 
@@ -125,7 +125,7 @@ func (w *Worker) Run() error {
 }
 
 func (w *Worker) Push(task models.Task) {
-	w.taskChannel <- task
+	w.TaskChannel <- task
 }
 
 func (w *Worker) Close() {
@@ -134,11 +134,15 @@ func (w *Worker) Close() {
 	}
 }
 
+func (w *Worker) GetTaskChan() chan<- models.Task {
+	return w.TaskChannel
+}
+
 func NewWorker(config WorkerConfig, logger Logger) *Worker {
 	return &Worker{
 		logger:       logger,
 		WorkerConfig: config,
-		taskChannel:  make(chan models.Task, 4*config.ProcessCount),
+		TaskChannel:  make(chan models.Task, 4*config.ProcessCount),
 		closeChannel: make(chan struct{}, config.ProcessCount),
 		errorChannel: make(chan error, config.ProcessCount),
 	}
