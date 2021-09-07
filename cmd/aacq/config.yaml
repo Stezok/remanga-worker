@@ -1,12 +1,12 @@
-start_id: 651166
+start_id: 651173
 translate:
   apiKey: AQVNyVcSdLfJvhW8HMAz4WnX8ZQjS0yt1XaDN0a8
   folderId: b1g6d3iaj8fvksk5lu69
 worker:
-  seleniummode: 0
-  seleniumPath: C:/Drivers/chromedriver.exe
+  seleniummode: 1
+  seleniumPath: /root/parser/src/remanga-worker/resources/chromedriver
   port: 9515
-  pathToImage: C:/Users/Админ/Desktop/script/1.jpg
+  pathToImage: /root/parser/src/remanga-worker/resources/1.jpg
   processCount: 1
   login: Leaderq
   password: 12345QawDse
