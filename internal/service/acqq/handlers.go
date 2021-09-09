@@ -46,12 +46,12 @@ func (service *ACQQService) TelegramNotifyOnFind() func(acqq.Title) {
 
 		wg.Wait()
 		text := `
-		Новый комикс на ACQQ!
+		Новый[ ](%s)комикс на ACQQ!
 		🔗 Ссылка: %s
 		🇨🇳 Оригинальное название: %s
 		🇷🇺 Название на русском: %s
 		🇺🇸 Название на английском: %s`
-		text = fmt.Sprintf(text, title.Link, title.Title, ruName, enName)
+		text = fmt.Sprintf(text, title.Photo, title.Link, title.Title, ruName, enName)
 
 		err := service.Bot.SendMessageWithCallback(text, "Опубликовать", func() {
 			service.taskChannel <- models.Task{

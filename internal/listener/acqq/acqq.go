@@ -41,6 +41,10 @@ func (acqq *ACQQListener) tryGet(id int64) (Title, error) {
 	doc.Find(".works-intro-title strong").Each(func(_ int, s *goquery.Selection) {
 		titleText, _ = s.Html()
 	})
+	var titlePhoto string
+	doc.Find(".works-cover a img").Each(func(_ int, s *goquery.Selection) {
+		titlePhoto, _ = s.Attr("src")
+	})
 
 	if titleText == "" {
 		return Title{}, fmt.Errorf("Title with id %d not found", id)
@@ -50,6 +54,7 @@ func (acqq *ACQQListener) tryGet(id int64) (Title, error) {
 	title.ID = id
 	title.Title = titleText
 	title.Link = url
+	title.Photo = titlePhoto
 
 	return title, nil
 }

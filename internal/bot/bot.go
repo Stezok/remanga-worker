@@ -163,7 +163,8 @@ func (tb *TelegramBot) SendMessageWithCallback(text, callbackText string, callba
 				tgbotapi.NewInlineKeyboardButtonData(callbackText, randString),
 			),
 		)
-		msg.DisableWebPagePreview = true
+		msg.ParseMode = "Markdown"
+		// msg.DisableWebPagePreview = true
 		_, err := tb.bot.Send(msg)
 		if err != nil {
 			return err

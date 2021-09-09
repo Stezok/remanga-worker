@@ -20,7 +20,8 @@ func main() {
 
 	// 1811774567:AAFVSUivdtW-nJOCvsW3aZG-Fl3BqwzmW-s
 	// 1453696928:AAHWpvYdAWvvUyGDIMjZDmMPeVWBlQIVmho
-	tgBot, err := bot.NewTelegramBot("1453696928:AAHWpvYdAWvvUyGDIMjZDmMPeVWBlQIVmho", []int64{
+	// 1991965691:AAFzUPWS-s4WFgTiEE9kmeYs7JY12v7kp4o
+	tgBot, err := bot.NewTelegramBot("1991965691:AAFzUPWS-s4WFgTiEE9kmeYs7JY12v7kp4o", []int64{
 		496823111,
 		768413750,
 	}, log.Default())
