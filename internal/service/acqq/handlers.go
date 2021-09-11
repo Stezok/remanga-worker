@@ -59,6 +59,7 @@ func (service *ACQQService) TelegramNotifyOnFind() func(acqq.Title) {
 				KrName:   title.Title,
 				RuName:   ruName,
 				EnName:   enName,
+				Type:     "2",
 				Link:     title.Link,
 				Callback: onPublish,
 			}

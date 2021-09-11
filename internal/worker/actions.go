@@ -91,7 +91,7 @@ func Prepare(wd selenium.WebDriver, pathToImage string) error {
 	return nil
 }
 
-func Post(wd selenium.WebDriver, ruName, enName, krName, link string) error {
+func Post(wd selenium.WebDriver, titleType, ruName, enName, krName, link string) error {
 	werr := &WorkerError{}
 	werr.FunctionName = "Post"
 
@@ -104,12 +104,12 @@ func Post(wd selenium.WebDriver, ruName, enName, krName, link string) error {
 		formData.append("rus_name", "%s");
 		formData.append("another_name", "%s");
 		formData.append("description", "");
-		formData.append("type", "1");
+		formData.append("type", "%s");
 		formData.append("categories", "5");
 		formData.append("categories", "6");
 		formData.append("genres", "2");
 		formData.append("genres", "38");
-		formData.append("publishers", "5096");
+		formData.append("publishers", "2560");
 		formData.append("status", "4");
 		formData.append("age_limit", "0");
 		formData.append("issue_year", "2021");
@@ -121,7 +121,7 @@ func Post(wd selenium.WebDriver, ruName, enName, krName, link string) error {
 		var xhr = new XMLHttpRequest();
 		xhr.open('POST', '/panel/add-titles/', true);
 		xhr.send(formData);
-	`, enName, ruName, krName, link)
+	`, enName, ruName, krName, titleType, link)
 
 	_, werr.Err = wd.ExecuteScript(js, nil)
 	if werr.Err != nil {

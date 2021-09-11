@@ -6,5 +6,6 @@ type Task struct {
 	EnName   string
 	KrName   string
 	Link     string
+	Type     string
 	Callback func()
 }
