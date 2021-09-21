@@ -193,9 +193,10 @@ func NewTelegramBot(token string, admins []int64, logger Logger) (*TelegramBot, 
 	}
 
 	return &TelegramBot{
-		bot:       bot,
-		admins:    admins,
-		logger:    logger,
-		callbacks: make(map[string]func()),
+		bot:          bot,
+		admins:       admins,
+		logger:       logger,
+		callbacks:    make(map[string]func()),
+		closeChannel: make(chan struct{}, 2),
 	}, nil
 }

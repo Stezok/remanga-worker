@@ -67,6 +67,23 @@ func Auth(wd selenium.WebDriver, login, password string) error {
 	return nil
 }
 
+func SetImage(wd selenium.WebDriver, path string) error {
+	werr := &WorkerError{}
+	werr.FunctionName = "SetImage"
+
+	var elem selenium.WebElement
+	elem, werr.Err = wd.FindElement(selenium.ByCSSSelector, "#id_cover")
+	if werr.Err != nil {
+		return werr
+	}
+
+	werr.Err = elem.SendKeys(path)
+	if werr.Err != nil {
+		return werr
+	}
+	return nil
+}
+
 func Prepare(wd selenium.WebDriver, pathToImage string) error {
 	werr := &WorkerError{}
 	werr.FunctionName = "Prepare"
@@ -77,13 +94,7 @@ func Prepare(wd selenium.WebDriver, pathToImage string) error {
 	}
 	time.Sleep(1 * time.Second)
 
-	var elem selenium.WebElement
-	elem, werr.Err = wd.FindElement(selenium.ByCSSSelector, "#id_cover")
-	if werr.Err != nil {
-		return werr
-	}
-
-	werr.Err = elem.SendKeys(pathToImage)
+	werr.Err = SetImage(wd, pathToImage)
 	if werr.Err != nil {
 		return werr
 	}
@@ -91,9 +102,16 @@ func Prepare(wd selenium.WebDriver, pathToImage string) error {
 	return nil
 }
 
-func Post(wd selenium.WebDriver, titleType, ruName, enName, krName, link string) error {
+func Post(wd selenium.WebDriver, titleType, ruName, enName, krName, status, link, path string) error {
 	werr := &WorkerError{}
 	werr.FunctionName = "Post"
+
+	if path != "" {
+		werr.Err = SetImage(wd, path)
+		if werr.Err != nil {
+			return werr.Err
+		}
+	}
 
 	js := fmt.Sprintf(`
 		var file = $("#id_cover")[0].files[0];
@@ -110,7 +128,7 @@ func Post(wd selenium.WebDriver, titleType, ruName, enName, krName, link string)
 		formData.append("genres", "2");
 		formData.append("genres", "38");
 		formData.append("publishers", "2560");
-		formData.append("status", "4");
+		formData.append("status", "%s");
 		formData.append("age_limit", "0");
 		formData.append("issue_year", "2021");
 		formData.append("mangachan_link", "");
@@ -121,7 +139,7 @@ func Post(wd selenium.WebDriver, titleType, ruName, enName, krName, link string)
 		var xhr = new XMLHttpRequest();
 		xhr.open('POST', '/panel/add-titles/', true);
 		xhr.send(formData);
-	`, enName, ruName, krName, titleType, link)
+	`, enName, ruName, krName, titleType, status, link)
 
 	_, werr.Err = wd.ExecuteScript(js, nil)
 	if werr.Err != nil {

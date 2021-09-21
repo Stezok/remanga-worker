@@ -40,6 +40,7 @@ func main() {
 
 	shutdownChannel := make(chan os.Signal, 1)
 	signal.Notify(shutdownChannel, os.Interrupt)
+	endChan := make(chan struct{})
 	go func() {
 		oscall := <-shutdownChannel
 		log.Printf("Shutdowning service with os call: %v", oscall)
@@ -48,8 +49,10 @@ func main() {
 		acqq.UpdateACQQConfig(cnfg, "config.yaml")
 		worker.Close()
 		service.Close()
+		endChan <- struct{}{}
 	}()
 
 	go worker.Run()
 	service.Run()
+	<-endChan
 }

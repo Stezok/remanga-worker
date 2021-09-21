@@ -35,7 +35,7 @@ func (w *Worker) ListenErrors() {
 }
 
 func (w *Worker) Do(task models.Task, wd selenium.WebDriver) error {
-	err := Post(wd, task.Type, task.RuName, task.EnName, task.KrName, task.Link)
+	err := Post(wd, task.Type, task.RuName, task.EnName, task.KrName, task.Status, task.Link, task.Photo)
 	if err != nil {
 		return err
 	}

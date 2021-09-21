@@ -1,16 +1,20 @@
-package acqq
+package naver
 
 import (
 	"fmt"
+	"io"
+	"net/http"
+	"os"
 	"sync"
+	"time"
 
-	"github.com/Stezok/remanga-worker/internal/listener/acqq"
+	"github.com/Stezok/remanga-worker/internal/listener/naver"
 	"github.com/Stezok/remanga-worker/internal/models"
 	"github.com/Stezok/remanga-worker/internal/translate"
 )
 
-func (service *ACQQService) TelegramNotifyOnFind() func(acqq.Title) {
-	return func(title acqq.Title) {
+func (service *NaverService) TelegramNotifyOnFind() func(naver.Title) {
+	return func(title naver.Title) {
 		var wg sync.WaitGroup
 
 		var ruName string
@@ -18,7 +22,7 @@ func (service *ACQQService) TelegramNotifyOnFind() func(acqq.Title) {
 		go func(ruName *string, text string) {
 			defer wg.Done()
 			var err error
-			*ruName, err = service.translator.Translate(text, translate.CHINESE, translate.RUSSIAN)
+			*ruName, err = service.translator.Translate(text, translate.KOREAN, translate.RUSSIAN)
 			if err != nil {
 				service.errChannel <- err
 			}
@@ -29,7 +33,7 @@ func (service *ACQQService) TelegramNotifyOnFind() func(acqq.Title) {
 		go func(enName *string, text string) {
 			defer wg.Done()
 			var err error
-			*enName, err = service.translator.Translate(text, translate.CHINESE, translate.ENGLISH)
+			*enName, err = service.translator.Translate(text, translate.KOREAN, translate.ENGLISH)
 			if err != nil {
 				service.errChannel <- err
 			}
@@ -42,11 +46,19 @@ func (service *ACQQService) TelegramNotifyOnFind() func(acqq.Title) {
 			if err != nil {
 				service.errChannel <- err
 			}
+
+			for {
+				err = os.Remove(title.Title + ".png")
+				if err == nil {
+					break
+				}
+				time.Sleep(1 * time.Second)
+			}
 		}
 
 		wg.Wait()
 		text := `
-		Новый[ ](%s)комикс на ACQQ!
+		Новый[ ](%s)комикс на Naver!
 		🔗 Ссылка: %s
 		🇨🇳 Оригинальное название: %s
 		🇷🇺 Название на русском: %s
@@ -54,14 +66,33 @@ func (service *ACQQService) TelegramNotifyOnFind() func(acqq.Title) {
 		text = fmt.Sprintf(text, title.Photo, title.Link, title.Title, ruName, enName)
 
 		err := service.Bot.SendMessageWithCallback(text, "Опубликовать", func() {
+			resp, err := http.Get(title.Photo)
+			if err != nil {
+				service.logger.Print(err)
+				return
+			}
+			defer resp.Body.Close()
+
+			file, err := os.Create(title.Title + ".png")
+			if err != nil {
+				service.logger.Print(err)
+				return
+			}
+			defer file.Close()
+
+			io.Copy(file, resp.Body)
+			file.Close()
+			path, _ := os.Getwd()
+
 			service.taskChannel <- models.Task{
 				ID:       title.ID,
 				KrName:   title.Title,
 				RuName:   ruName,
 				EnName:   enName,
-				Status:   "4",
-				Type:     "2",
+				Status:   "1",
+				Type:     "1",
 				Link:     title.Link,
+				Photo:    path + "\\" + file.Name(),
 				Callback: onPublish,
 			}
 		})

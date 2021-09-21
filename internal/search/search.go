@@ -154,6 +154,7 @@ func (ss *SearchService) Notify(doc Document) {
 		RuName: doc.TitleRus,
 		EnName: doc.TitleEng,
 		Link:   doc.GetLink(),
+		Status: "4",
 		Type:   "1",
 		Callback: func() {
 			title := database.Title{
